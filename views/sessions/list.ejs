@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Список сеансов</title>
+    <link rel="stylesheet" href="/css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Список сеансов</h1>
+      <div style="background: #1e1e1e; color: #f0f0f0; padding: 20px; border-radius: 16px; font-family: 'Segoe UI', sans-serif; line-height: 1.6; max-width: 400px;">
+        <h3 style="color: #80caff; margin-top: 0;">🔄 Статистика проработок</h3>
+        
+        <p>✨ <strong>Провёл:</strong> <span style="color:#a1ffa1; font-weight: bold;"><%= iGave %></span></p>
+        <p>🧘‍♂️ <strong>Получил:</strong> <span style="color:#ffd580; font-weight: bold;"><%= iReceived %></span></p>
+        <hr style="border: none; border-top: 1px solid #444; margin: 10px 0;">
+        <p>📊 <strong>Всего проработок:</strong> <span style="color:#ff8cbc; font-weight: bold;"><%= total %></span></p>
+      </div>
+      <p><a href="/sessions/new">Добавить новый сеанс</a></p>
+
+      <!-- Добавили id="sessionsTable" -->
+      <table id="sessionsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Дата</th>
+            <th>Фамилия</th>
+            <th>Имя</th>
+            <th>Формат</th>
+            <th>Видео сеанса</th>
+            <th>Видео-отзыв</th>
+            <th>Детали</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sessions.forEach(session => { %>
+            <tr>
+              <td><%= session.id %></td>
+              <td><%= session.date %></td>
+              <td><%= session.surname %></td>
+              <td><%= session.name %></td>
+              <td><%= session.sessionType %></td>
+              <td>
+                <% if (session.therapyLink) { %>
+                  <a href="<%= session.therapyLink %>" target="_blank">Открыть</a>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td>
+                <% if (session.feedbackLink) { %>
+                  <a href="<%= session.feedbackLink %>" target="_blank">Открыть</a>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td>
+                <a href="/sessions/<%= session.id %>">Подробнее</a> | 
+                <a href="/sessions/<%= session.id %>/edit">Редактировать</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Скрипт для сортировки по клику на заголовок -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const table = document.getElementById('sessionsTable');
+        const headers = table.querySelectorAll('thead th');
+        
+        // Будем хранить направление сортировки для каждого столбца
+        // true = по возрастанию, false = по убыванию
+        let sortDirections = {};
+
+        headers.forEach((header, index) => {
+          header.addEventListener('click', () => {
+            // Получаем tbody и строки таблицы
+            const tb = table.tBodies[0];
+            let rows = Array.from(tb.rows);
+
+            // Определяем, какой должна быть сортировка:
+            // если первый раз кликаем по этому столбцу, сортируем по возрастанию,
+            // если второй раз — меняем на противоположную.
+            let currentDirection = sortDirections[index];
+            let isAscending = currentDirection === undefined ? true : !currentDirection;
+            sortDirections[index] = isAscending;
+
+            // Сортируем строки
+            rows.sort((rowA, rowB) => {
+              // Получаем текст ячеек, по которым идёт сравнение
+              let cellA = rowA.cells[index].innerText.trim();
+              let cellB = rowB.cells[index].innerText.trim();
+
+              // Пытаемся распознать числа, иначе сортируем строки лексикографически
+              let valA = parseFloat(cellA.replace(',', '.'));
+              let valB = parseFloat(cellB.replace(',', '.'));
+
+              // Если оба - это число, сортируем как числа, иначе - как строки
+              if (!isNaN(valA) && !isNaN(valB)) {
+                return isAscending ? valA - valB : valB - valA;
+              } else {
+                // Для строк
+                if (cellA < cellB) return isAscending ? -1 : 1;
+                if (cellA > cellB) return isAscending ? 1 : -1;
+                return 0;
+              }
+            });
+
+            // Переставляем строки в отсортированном порядке
+            rows.forEach((row) => tb.appendChild(row));
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

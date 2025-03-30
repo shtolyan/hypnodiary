@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Новый сеанс</title>
+    <link rel="stylesheet" href="/css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Добавить сеанс</h1>
+      <form action="/sessions" method="POST">
+        <label>Дата:</label><br />
+        <input type="text" name="date" placeholder="2025-03-30" /><br />
+
+        <label>Фамилия:</label><br />
+        <input type="text" name="surname" placeholder="Иванов" /><br />
+
+        <label>Имя:</label><br />
+        <input type="text" name="name" placeholder="Иван" /><br />
+
+        <label>Формат:</label><br />
+        <select name="sessionType">
+          <option value="Я провёл">Я провёл</option>
+          <option value="Мне провели">Мне провели</option>
+        </select><br />
+
+        <label>Ссылка на видео сеанса (YouTube):</label><br />
+        <input type="text" name="therapyLink" placeholder="https://youtu.be/..." /><br />
+
+        <label>Ссылка на видео-отзыв (YouTube):</label><br />
+        <input type="text" name="feedbackLink" placeholder="https://youtu.be/..." /><br />
+
+        <label>Заметки:</label><br />
+        <textarea name="notes" placeholder="Ключевые моменты"></textarea><br />
+
+        <button type="submit">Сохранить</button>
+      </form>
+      <p><a href="/sessions">Вернуться к списку</a></p>
+    </div>
+  </body>
+</html>

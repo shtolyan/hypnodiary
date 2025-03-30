@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Редактирование сеанса</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Редактировать сеанс #<%= session.id %></h1>
+      <form action="/sessions/<%= session.id %>/update" method="POST">
+
+        <label>Дата:</label><br />
+        <input type="text" name="date" value="<%= session.date %>" /><br />
+
+        <label>Фамилия:</label><br />
+        <input type="text" name="surname" value="<%= session.surname %>" /><br />
+
+        <label>Имя:</label><br />
+        <input type="text" name="name" value="<%= session.name %>" /><br />
+
+        <label>Формат:</label><br />
+        <select name="sessionType">
+          <option value="Я провёл" <%= session.sessionType === 'Я провёл' ? 'selected' : '' %>>
+            Я провёл
+          </option>
+          <option value="Мне провели" <%= session.sessionType === 'Мне провели' ? 'selected' : '' %>>
+            Мне провели
+          </option>
+        </select>
+        <br />
+
+        <label>Ссылка на видео сеанса (YouTube):</label><br />
+        <input type="text" name="therapyLink" value="<%= session.therapyLink %>" /><br />
+
+        <label>Ссылка на видео-отзыв (YouTube):</label><br />
+        <input type="text" name="feedbackLink" value="<%= session.feedbackLink %>" /><br />
+
+        <label>Заметки:</label><br />
+        <textarea name="notes"><%= session.notes %></textarea><br />
+
+        <button type="submit">Сохранить</button>
+      </form>
+
+      <p><a href="/sessions">Вернуться к списку</a></p>
+    </div>
+  </body>
+</html>

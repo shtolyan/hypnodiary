@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Детали сеанса</title>
+    <link rel="stylesheet" href="/css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Сеанс <%= session.id %></h1>
+      <p>Дата: <%= session.date %></p>
+      <p>Фамилия: <%= session.surname %></p>
+      <p>Имя: <%= session.name %></p>
+      <p>Формат: <%= session.sessionType %></p>
+
+      <h3>Видео сеанса</h3>
+      <% if (session.therapyLink) { %>
+        <iframe width="560" height="315"
+                src="<%= session.therapyLink %>"
+                frameborder="0"
+                allowfullscreen></iframe>
+      <% } else { %>
+        <p>Нет ссылки на видео.</p>
+      <% } %>
+
+      <h3>Видео-отзыв</h3>
+      <% if (session.feedbackLink) { %>
+        <iframe width="560" height="315"
+                src="<%= session.feedbackLink %>"
+                frameborder="0"
+                allowfullscreen></iframe>
+      <% } else { %>
+        <p>Нет ссылки на видео-отзыв.</p>
+      <% } %>
+
+      <h3>Заметки</h3>
+      <p><%= session.notes %></p>
+
+      <p><a class="btn-edit" href="/sessions/<%= session.id %>/edit">Редактировать</a></p>
+
+      <!-- Пример кнопки удаления (которую вы сказали, что сделали DELETE) -->
+      <form action="/sessions/<%= session.id %>/delete" method="DELETE" style="display:inline;">
+        <button class="btn-delete" type="submit">Удалить</button>
+      </form>
+      <p><a href="/sessions">Вернуться к списку</a></p>
+    </div>
+  </body>
+</html>
