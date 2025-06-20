@@ -2,6 +2,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const methodOverride = require('method-override');
+const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
+const bcrypt = require('bcryptjs');
 const db = require('./db');
 
 const app = express();
@@ -19,6 +22,78 @@ app.use(methodOverride('_method'));
 // Папка, в которой лежат статические файлы (css, картинки)
 app.use(express.static('public'));
 
+// Настройка express-session с хранилищем SQLite
+app.use(
+  session({
+    store: new SQLiteStore({ db: 'sessions.sqlite' }),
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: false
+  })
+);
+
+// Middleware проверки авторизации
+function requireAuth(req, res, next) {
+  if (!req.session.userId) {
+    return res.redirect('/login');
+  }
+  next();
+}
+
+// Применяем ко всем маршрутам /sessions*
+app.use('/sessions', requireAuth);
+
+// Страница регистрации
+app.get('/register', (req, res) => {
+  res.render('register');
+});
+
+app.post('/register', (req, res) => {
+  const { username, password } = req.body;
+  const passwordHash = bcrypt.hashSync(password, 10);
+  db.run(
+    `INSERT INTO users (username, password_hash) VALUES (?, ?)`,
+    [username, passwordHash],
+    function (err) {
+      if (err) {
+        return res.send('Ошибка регистрации');
+      }
+      req.session.userId = this.lastID;
+      res.redirect('/sessions');
+    }
+  );
+});
+
+// Страница входа
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  db.get(
+    `SELECT * FROM users WHERE username = ?`,
+    [username],
+    (err, user) => {
+      if (err || !user) {
+        return res.send('Неверные учётные данные');
+      }
+      if (!bcrypt.compareSync(password, user.password_hash)) {
+        return res.send('Неверные учётные данные');
+      }
+      req.session.userId = user.id;
+      res.redirect('/sessions');
+    }
+  );
+});
+
+// Выход
+app.post('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/login');
+  });
+});
+
 // --- Маршруты ---
 
 // Главная (можно сделать какую-то приветственную страницу или 
@@ -29,10 +104,13 @@ app.get('/', (req, res) => {
 
 // 1) Список всех сеансов
 app.get('/sessions', (req, res) => {
-  db.all(`SELECT * FROM sessions ORDER BY id DESC`, [], (err, rows) => {
-    if (err) {
-      return res.send('Ошибка запроса к базе данных');
-    }
+  db.all(
+    `SELECT * FROM sessions WHERE user_id = ? ORDER BY id DESC`,
+    [req.session.userId],
+    (err, rows) => {
+      if (err) {
+        return res.send('Ошибка запроса к базе данных');
+      }
 
     // Подсчитаем статистику
     const total = rows.length;
@@ -57,9 +135,9 @@ app.post('/sessions', (req, res) => {
   feedbackLink = transformYouTubeLink(feedbackLink);
 
   db.run(
-    `INSERT INTO sessions (date, surname, name, sessionType, therapyLink, feedbackLink, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [date, surname, name, sessionType, therapyLink, feedbackLink, notes],
+    `INSERT INTO sessions (user_id, date, surname, name, sessionType, therapyLink, feedbackLink, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [req.session.userId, date, surname, name, sessionType, therapyLink, feedbackLink, notes],
     function(err) {
       if (err) {
         return res.send('Ошибка при добавлении сеанса в базу');
@@ -74,10 +152,13 @@ app.post('/sessions', (req, res) => {
 // (например, по id)
 app.get('/sessions/:id', (req, res) => {
   const sessionId = req.params.id;
-  db.get(`SELECT * FROM sessions WHERE id = ?`, [sessionId], (err, row) => {
-    if (err) {
-      return res.send('Ошибка при получении данных');
-    }
+  db.get(
+    `SELECT * FROM sessions WHERE id = ? AND user_id = ?`,
+    [sessionId, req.session.userId],
+    (err, row) => {
+      if (err) {
+        return res.send('Ошибка при получении данных');
+      }
     if (!row) {
       return res.send('Сеанс не найден');
     }
@@ -122,8 +203,8 @@ function transformYouTubeLink(link) {
 // Используем POST, так как HTML формы не поддерживают DELETE
 app.post('/sessions/:id/delete', (req, res) => {
   const sessionId = req.params.id;
-  
-  db.run(`DELETE FROM sessions WHERE id = ?`, [sessionId], function(err) {
+
+  db.run(`DELETE FROM sessions WHERE id = ? AND user_id = ?`, [sessionId, req.session.userId], function(err) {
     if (err) {
       return res.send('Ошибка при удалении из базы данных');
     }
@@ -135,7 +216,7 @@ app.post('/sessions/:id/delete', (req, res) => {
 // Форма редактирования
 app.get('/sessions/:id/edit', (req, res) => {
   const sessionId = req.params.id;
-  db.get(`SELECT * FROM sessions WHERE id = ?`, [sessionId], (err, row) => {
+  db.get(`SELECT * FROM sessions WHERE id = ? AND user_id = ?`, [sessionId, req.session.userId], (err, row) => {
     if (err) {
       return res.send('Ошибка при получении данных из базы');
     }
@@ -165,9 +246,9 @@ app.post('/sessions/:id/update', (req, res) => {
         sessionType = ?,
         therapyLink = ?,
         feedbackLink = ?,
-        notes = ?
-    WHERE id = ?
-  `, [date, surname, name, sessionType, therapyLink, feedbackLink, notes, sessionId],
+    notes = ?
+    WHERE id = ? AND user_id = ?
+  `, [date, surname, name, sessionType, therapyLink, feedbackLink, notes, sessionId, req.session.userId],
     function(err) {
       if (err) {
         return res.send('Ошибка при обновлении записи в базе');
