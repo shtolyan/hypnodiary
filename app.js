@@ -23,10 +23,11 @@ app.use(methodOverride('_method'));
 app.use(express.static('public'));
 
 // Настройка express-session с хранилищем SQLite
+const sessionSecret = process.env.SESSION_SECRET || 'keyboard cat';
 app.use(
   session({
     store: new SQLiteStore({ db: 'sessions.sqlite' }),
-    secret: 'keyboard cat',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false
   })
