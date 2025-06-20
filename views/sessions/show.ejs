@@ -39,8 +39,8 @@
       <p><a class="btn-edit" href="/sessions/<%= session.id %>/edit">Редактировать</a></p>
 
       <!-- Пример кнопки удаления (которую вы сказали, что сделали DELETE) -->
-      <!-- HTML forms поддерживают только GET и POST, поэтому используем POST -->
       <form action="/sessions/<%= session.id %>/delete" method="POST" style="display:inline;">
+        <input type="hidden" name="_method" value="DELETE" />
         <button class="btn-delete" type="submit">Удалить</button>
       </form>
       <p><a href="/sessions">Вернуться к списку</a></p>
