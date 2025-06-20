@@ -44,7 +44,7 @@ cp .env.example .env
 ### 4. Запустить приложение
 
 ```bash
-node app.js
+npm start
 ```
 
 Перед запуском убедитесь, что в `.env` указан `DATABASE_URL` с данными PostgreSQL
