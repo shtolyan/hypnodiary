@@ -29,7 +29,8 @@ app.use(
   session({
     store: new PgStore({
       pool: db,
-      createTableIfMissing: true
+      // Table creation is handled in db.js
+      createTableIfMissing: false
     }),
     secret: sessionSecret,
     resave: false,
