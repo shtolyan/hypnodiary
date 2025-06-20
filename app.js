@@ -6,6 +6,7 @@ const session = require('express-session');
 const PgStore = require('connect-pg-simple')(session);
 const bcrypt = require('bcryptjs');
 const db = require('./db');
+const { transformYouTubeLink } = require('./utils');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -178,39 +179,6 @@ app.get('/sessions/:id', async (req, res, next) => {
   }
 });
 
-function transformYouTubeLink(link) {
-  if (!link) return '';
-
-  // Пробуем учесть короткий формат "https://youtu.be/VIDEO_ID"
-  if (link.includes('youtu.be/')) {
-    try {
-      const url = new URL(link);
-      // из url.pathname достанем /VIDEO_ID
-      // например, для https://youtu.be/4L5Ckz6KndE -> pathname будет "/4L5Ckz6KndE"
-      const videoId = url.pathname.replace('/', '');
-      return `https://www.youtube.com/embed/${videoId}`;
-    } catch (e) {
-      // если не получилось распарсить, вернём исходную
-      return link;
-    }
-  }
-
-  // Проверяем классический формат "youtube.com/watch?v=VIDEO_ID"
-  if (link.includes('youtube.com/watch')) {
-    try {
-      const url = new URL(link);
-      const videoId = url.searchParams.get('v');
-      if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-    } catch (e) {
-      return link;
-    }
-  }
-
-  // Если ничего не подходит (вдруг уже embed или вообще не YouTube)
-  return link;
-}
 // Удаление конкретного сеанса
 // Форма отправляет POST c _method=DELETE, method-override преобразует его в DELETE
 app.delete('/sessions/:id/delete', async (req, res, next) => {
