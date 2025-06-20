@@ -7,6 +7,16 @@
   </head>
   <body>
     <div class="container">
+      <p>
+        <% if (isAuthenticated) { %>
+          <form action="/logout" method="POST" style="display:inline;">
+            <button type="submit">Выйти</button>
+          </form>
+        <% } else { %>
+          <a href="/login">Войти</a> |
+          <a href="/register">Регистрация</a>
+        <% } %>
+      </p>
       <h1>Вход</h1>
       <form action="/login" method="POST">
         <label>Логин:</label><br />

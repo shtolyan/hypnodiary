@@ -32,6 +32,12 @@ app.use(
   })
 );
 
+// Делаем информацию об авторизации доступной во всех шаблонах
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = !!req.session.userId;
+  next();
+});
+
 // Middleware проверки авторизации
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
@@ -45,7 +51,7 @@ app.use('/sessions', requireAuth);
 
 // Страница регистрации
 app.get('/register', (req, res) => {
-  res.render('register');
+  res.render('auth/register');
 });
 
 app.post('/register', (req, res) => {
@@ -66,7 +72,7 @@ app.post('/register', (req, res) => {
 
 // Страница входа
 app.get('/login', (req, res) => {
-  res.render('login');
+  res.render('auth/login');
 });
 
 app.post('/login', (req, res) => {
