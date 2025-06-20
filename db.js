@@ -31,6 +31,18 @@ async function init() {
       notes TEXT
     );
   `);
+
+  // Table used by connect-pg-simple for storing express sessions
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS session (
+      sid varchar PRIMARY KEY,
+      sess json NOT NULL,
+      expire timestamp(6) NOT NULL
+    );
+  `);
+  await pool.query(
+    'CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON session("expire")'
+  );
 }
 
 init().catch(err => console.error('DB init error:', err));

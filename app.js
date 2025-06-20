@@ -26,7 +26,10 @@ app.use(express.static('public'));
 const sessionSecret = process.env.SESSION_SECRET || 'keyboard cat';
 app.use(
   session({
-    store: new PgStore({ pool: db }),
+    store: new PgStore({
+      pool: db,
+      createTableIfMissing: true
+    }),
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false
