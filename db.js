@@ -1,46 +1,38 @@
-// db.js
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 
-// Создаём/открываем базу данных (файл hypnodiary.db в корне проекта)
-const dbPath = path.join(__dirname, 'hypnodiary.db');
-const db = new sqlite3.Database(dbPath);
+// Подключение к PostgreSQL
+const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/hypnodiary';
+
+const pool = new Pool({
+  connectionString,
+  ssl: process.env.PGSSL ? { rejectUnauthorized: false } : false
+});
 
 // Создаём таблицы, если их нет
-db.serialize(() => {
-  // Таблица пользователей
-  db.run(`
+async function init() {
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       username TEXT UNIQUE,
       password_hash TEXT
     );
   `);
 
-  // Таблица сессий
-  db.run(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
       date TEXT,
       surname TEXT,
       name TEXT,
-      sessionType TEXT,      -- "Я провёл" или "Мне провели"
+      sessionType TEXT,
       therapyLink TEXT,
       feedbackLink TEXT,
-      notes TEXT,
-      FOREIGN KEY(user_id) REFERENCES users(id)
+      notes TEXT
     );
   `);
+}
 
-  // Если таблица sessions уже существовала, убедимся, что есть колонка user_id
-  db.all('PRAGMA table_info(sessions);', (err, columns) => {
-    if (err) return;
-    const hasUserId = columns.some(col => col.name === 'user_id');
-    if (!hasUserId) {
-      db.run('ALTER TABLE sessions ADD COLUMN user_id INTEGER;');
-    }
-  });
-});
+init().catch(err => console.error('DB init error:', err));
 
-module.exports = db;
+module.exports = pool;
