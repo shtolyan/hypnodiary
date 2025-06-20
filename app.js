@@ -1,6 +1,7 @@
 // app.js
 const express = require('express');
 const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
 const db = require('./db');
 
 const app = express();
@@ -11,6 +12,9 @@ app.set('view engine', 'ejs');
 
 // Middleware для чтения данных формы (urlencoded)
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Поддержка методов PUT и DELETE через параметр _method
+app.use(methodOverride('_method'));
 
 // Папка, в которой лежат статические файлы (css, картинки)
 app.use(express.static('public'));
