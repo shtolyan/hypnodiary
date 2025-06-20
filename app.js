@@ -119,7 +119,8 @@ function transformYouTubeLink(link) {
   return link;
 }
 // Удаление конкретного сеанса
-app.delete('/sessions/:id/delete', (req, res) => {
+// Используем POST, так как HTML формы не поддерживают DELETE
+app.post('/sessions/:id/delete', (req, res) => {
   const sessionId = req.params.id;
   
   db.run(`DELETE FROM sessions WHERE id = ?`, [sessionId], function(err) {
