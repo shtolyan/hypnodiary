@@ -204,8 +204,8 @@ function transformYouTubeLink(link) {
   return link;
 }
 // Удаление конкретного сеанса
-// Используем POST, так как HTML формы не поддерживают DELETE
-app.post('/sessions/:id/delete', async (req, res) => {
+// Форма отправляет POST c _method=DELETE, method-override преобразует его в DELETE
+app.delete('/sessions/:id/delete', async (req, res) => {
   const sessionId = req.params.id;
 
   try {
