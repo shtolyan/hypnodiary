@@ -55,7 +55,7 @@ app.get('/register', (req, res) => {
   res.render('auth/register');
 });
 
-app.post('/register', async (req, res) => {
+app.post('/register', async (req, res, next) => {
   const { username, password } = req.body;
   const passwordHash = bcrypt.hashSync(password, 10);
   try {
@@ -66,7 +66,8 @@ app.post('/register', async (req, res) => {
     req.session.userId = result.rows[0].id;
     res.redirect('/sessions');
   } catch (err) {
-    res.send('Ошибка регистрации');
+    console.error(err);
+    return next(err);
   }
 });
 
@@ -75,7 +76,7 @@ app.get('/login', (req, res) => {
   res.render('auth/login');
 });
 
-app.post('/login', async (req, res) => {
+app.post('/login', async (req, res, next) => {
   const { username, password } = req.body;
   try {
     const { rows } = await db.query(
@@ -84,12 +85,13 @@ app.post('/login', async (req, res) => {
     );
     const user = rows[0];
     if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-      return res.send('Неверные учётные данные');
+      return res.status(400).send('Неверные учётные данные');
     }
     req.session.userId = user.id;
     res.redirect('/sessions');
   } catch (err) {
-    res.send('Неверные учётные данные');
+    console.error(err);
+    return next(err);
   }
 });
 
@@ -109,7 +111,7 @@ app.get('/', (req, res) => {
 });
 
 // 1) Список всех сеансов
-app.get('/sessions', async (req, res) => {
+app.get('/sessions', async (req, res, next) => {
   try {
     const { rows } = await db.query(
       `SELECT * FROM sessions WHERE user_id = $1 ORDER BY id DESC`,
@@ -122,7 +124,8 @@ app.get('/sessions', async (req, res) => {
 
     res.render('sessions/list', { sessions: rows, total, iGave, iReceived });
   } catch (err) {
-    res.send('Ошибка запроса к базе данных');
+    console.error(err);
+    return next(err);
   }
 });
 
@@ -132,7 +135,7 @@ app.get('/sessions/new', (req, res) => {
 });
 
 // 3) Обработка формы создания сеанса
-app.post('/sessions', async (req, res) => {
+app.post('/sessions', async (req, res, next) => {
   let { date, surname, name, sessionType, therapyLink, feedbackLink, notes } = req.body;
 
   // Преобразуем ссылки, чтобы были в виде https://www.youtube.com/embed/VIDEO_ID
@@ -147,13 +150,14 @@ app.post('/sessions', async (req, res) => {
     );
     res.redirect('/sessions');
   } catch (err) {
-    res.send('Ошибка при добавлении сеанса в базу');
+    console.error(err);
+    return next(err);
   }
 });
 
 // 4) Отображение деталей конкретного сеанса
 // (например, по id)
-app.get('/sessions/:id', async (req, res) => {
+app.get('/sessions/:id', async (req, res, next) => {
   const sessionId = req.params.id;
   try {
     const { rows } = await db.query(
@@ -162,11 +166,12 @@ app.get('/sessions/:id', async (req, res) => {
     );
     const row = rows[0];
     if (!row) {
-      return res.send('Сеанс не найден');
+      return res.status(404).send('Сеанс не найден');
     }
     res.render('sessions/show', { session: row });
   } catch (err) {
-    res.send('Ошибка при получении данных');
+    console.error(err);
+    return next(err);
   }
 });
 
@@ -205,34 +210,36 @@ function transformYouTubeLink(link) {
 }
 // Удаление конкретного сеанса
 // Форма отправляет POST c _method=DELETE, method-override преобразует его в DELETE
-app.delete('/sessions/:id/delete', async (req, res) => {
+app.delete('/sessions/:id/delete', async (req, res, next) => {
   const sessionId = req.params.id;
 
   try {
     await db.query(`DELETE FROM sessions WHERE id = $1 AND user_id = $2`, [sessionId, req.session.userId]);
     res.redirect('/sessions');
   } catch (err) {
-    res.send('Ошибка при удалении из базы данных');
+    console.error(err);
+    return next(err);
   }
 });
 
 // Форма редактирования
-app.get('/sessions/:id/edit', async (req, res) => {
+app.get('/sessions/:id/edit', async (req, res, next) => {
   const sessionId = req.params.id;
   try {
     const { rows } = await db.query(`SELECT * FROM sessions WHERE id = $1 AND user_id = $2`, [sessionId, req.session.userId]);
     const row = rows[0];
     if (!row) {
-      return res.send('Сеанс не найден');
+      return res.status(404).send('Сеанс не найден');
     }
     res.render('sessions/edit', { session: row });
   } catch (err) {
-    res.send('Ошибка при получении данных из базы');
+    console.error(err);
+    return next(err);
   }
 });
 
 // Обработка формы редактирования
-app.post('/sessions/:id/update', async (req, res) => {
+app.post('/sessions/:id/update', async (req, res, next) => {
   const sessionId = req.params.id;
   let { date, surname, name, sessionType, therapyLink, feedbackLink, notes } = req.body;
 
@@ -255,8 +262,15 @@ app.post('/sessions/:id/update', async (req, res) => {
     );
     res.redirect('/sessions/' + sessionId);
   } catch (err) {
-    res.send('Ошибка при обновлении записи в базе');
+    console.error(err);
+    return next(err);
   }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send(err.message || 'Internal Server Error');
 });
 
 app.listen(PORT, () => {
