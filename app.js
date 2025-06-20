@@ -119,7 +119,8 @@ app.get('/', (req, res) => {
 app.get('/sessions', async (req, res, next) => {
   try {
     const { rows } = await db.query(
-      `SELECT * FROM sessions WHERE user_id = $1 ORDER BY id DESC`,
+      `SELECT id, date, surname, name, sessionType AS "sessionType", therapyLink, feedbackLink, notes
+       FROM sessions WHERE user_id = $1 ORDER BY id DESC`,
       [req.session.userId]
     );
 
@@ -166,7 +167,8 @@ app.get('/sessions/:id', async (req, res, next) => {
   const sessionId = req.params.id;
   try {
     const { rows } = await db.query(
-      `SELECT * FROM sessions WHERE id = $1 AND user_id = $2`,
+      `SELECT id, date, surname, name, sessionType AS "sessionType", therapyLink, feedbackLink, notes
+       FROM sessions WHERE id = $1 AND user_id = $2`,
       [sessionId, req.session.userId]
     );
     const row = rows[0];
@@ -198,7 +200,11 @@ app.delete('/sessions/:id/delete', async (req, res, next) => {
 app.get('/sessions/:id/edit', async (req, res, next) => {
   const sessionId = req.params.id;
   try {
-    const { rows } = await db.query(`SELECT * FROM sessions WHERE id = $1 AND user_id = $2`, [sessionId, req.session.userId]);
+    const { rows } = await db.query(
+      `SELECT id, date, surname, name, sessionType AS "sessionType", therapyLink, feedbackLink, notes
+       FROM sessions WHERE id = $1 AND user_id = $2`,
+      [sessionId, req.session.userId]
+    );
     const row = rows[0];
     if (!row) {
       return res.status(404).send('Сеанс не найден');
